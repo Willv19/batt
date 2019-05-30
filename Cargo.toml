@@ -1,0 +1,11 @@
+[package]
+name = "batt"
+version = "0.1.0"
+authors = ["Will Vauclain <willvauclain.dev@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+libc = "0.2.54"
+toml = "0.5.1"
+serde = { version = "1.0.82", features = ['derive'] }
+dirs = "2.0.0"

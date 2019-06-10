@@ -1,0 +1,13 @@
+[metadata]
+package_name = "batt"
+version = "0.1.0"
+description = "A simple battery monitor"
+
+[files]
+binaries = ["target/release/batt"]
+
+[commands]
+prepare = ""
+build = """
+cargo build --release
+"""

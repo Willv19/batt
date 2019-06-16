@@ -117,20 +117,20 @@ OPTIONS:
         }
 
         if max_percentage < last_max_percentage {
-            if max_percentage <= config.danger {
+            if max_percentage <= config.danger && last_max_percentage > config.danger {
                 Command::new("sh")
                     .arg("-c")
                     .arg(&config.dangercmd)
                     .status()
                     .unwrap();
-            } else if max_percentage <= config.critical {
+            } else if max_percentage <= config.critical && last_max_percentage > config.critical {
                 Command::new("notify-send")
                     .arg("-u")
                     .arg("critical")
                     .arg("Battery is critically low.")
                     .status()
                     .unwrap();
-            } else if max_percentage <= config.warning {
+            } else if max_percentage <= config.warning && last_max_percentage > config.warning {
                 println!("Warning");
                 Command::new("notify-send")
                     .arg("-u")

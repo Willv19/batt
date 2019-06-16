@@ -1,6 +1,6 @@
 [metadata]
 package_name = "batt"
-version = "0.1.0"
+version = "0.1.1"
 description = "A simple battery monitor"
 
 [files]

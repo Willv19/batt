@@ -1,10 +1,9 @@
-use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 struct Config {
     batteries: Vec<String>,
     delay_seconds: u64,
@@ -17,12 +16,12 @@ struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            batteries: vec![String::from("BAT0")],
+            batteries: vec![String::from("BAT0"), String::from("BAT1")],
             delay_seconds: 60,
             warning: 25,
             critical: 10,
-            danger: 5,
-            dangercmd: String::from("notify-send 'Dangerously low battery'"),
+            danger: 3,
+            dangercmd: String::from("notify-send -u critical 'Critical' 'Hibernated system due to low battery' && systemctl hibernate"),
         }
     }
 }
@@ -65,21 +64,8 @@ OPTIONS:
         }
     }
 
-    let mut config_path = dirs::home_dir().unwrap();
-    config_path.push(".batt.toml");
-
-    let config = if config_path.exists() {
-        let mut config_str = String::new();
-        File::open(config_path)
-            .unwrap()
-            .read_to_string(&mut config_str)
-            .unwrap();
-
-        toml::from_str(&config_str).expect("Error reading config file")
-    } else {
-        Config::default()
-    };
-
+    let config = Config::default();
+    
     let mut last_max_percentage = 101;
     let battery_paths: Vec<(PathBuf, PathBuf)> = config
         .batteries

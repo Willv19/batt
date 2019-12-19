@@ -1,45 +1,25 @@
+mod config;
+use config::Config;
+
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-#[derive(Debug)]
-struct Config {
-    batteries: Vec<String>,
-    delay_seconds: u64,
-    warning: u8,
-    critical: u8,
-    danger: u8,
-    dangercmd: String,
-}
+use nix;
 
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            batteries: vec![String::from("BAT0"), String::from("BAT1")],
-            delay_seconds: 60,
-            warning: 25,
-            critical: 10,
-            danger: 3,
-            dangercmd: String::from("notify-send -u critical 'Critical' 'Hibernated system due to low battery' && systemctl hibernate"),
-        }
-    }
-}
-
-fn main() {
-    let usage_string: String = format!(
-        "\
-USAGE:
+const USAGE_STRING: &'static str = "USAGE:
     batt [OPTIONS]
 
 OPTIONS:
-    {:width$}Launch batt as a daemon
-    {:width$}Show this help message",
-        "-d, --daemonize",
-        "-h, --help",
-        width = 20
-    );
+    -d, --daemonize\tLaunch batt as a daemon
+    -h, --help\tShow this help message";
 
+struct Args {
+    pub daemonize: bool,
+}
+
+fn parse_args() -> Args {
     let mut daemonize = false;
 
     let mut args = std::env::args();
@@ -48,37 +28,51 @@ OPTIONS:
         match arg.as_str() {
             "-d" | "--daemonize" => daemonize = true,
             "-h" | "--help" => {
-                println!("A simple battery monitor\n{}", usage_string);
-                return;
+                println!("A simple battery monitor\n{}", USAGE_STRING);
+                std::process::exit(0);
             }
             _ => {
-                println!("Error: unrecognized option '{}'\n\n{}", arg, usage_string);
+                eprintln!("Error: unrecognized option '{}'\n\n{}", arg, USAGE_STRING);
                 std::process::exit(1);
             }
         };
     }
 
+    Args { daemonize }
+}
+
+fn get_status_and_percentage_path(battery: &String) -> (PathBuf, PathBuf) {
+    let path = PathBuf::from("/sys/class/power_supply/".to_owned() + battery);
+
+    let mut status_path = path.clone();
+    status_path.push("status");
+
+    let mut percentage_path = path.clone();
+    percentage_path.push("capacity");
+
+    (status_path, percentage_path)
+}
+
+fn main() {
+    let Args { daemonize } = parse_args();
+
     if daemonize {
-        unsafe {
-            libc::daemon(1, 1);
+        match nix::unistd::daemon(true, true) {
+            Ok(_) => println!("Successfully daemonized!"),
+            Err(err) => {
+                eprintln!("Error in daemonizing: {}", err);
+                std::process::exit(1);
+            }
         }
     }
 
     let config = Config::default();
-    
+
     let mut last_max_percentage = 101;
     let battery_paths: Vec<(PathBuf, PathBuf)> = config
         .batteries
         .iter()
-        .map(|battery| {
-            let mut path = PathBuf::from("/sys/class/power_supply/");
-            path.push(battery);
-            let mut status_path = path.clone();
-            status_path.push("status");
-            let mut percentage_path = path;
-            percentage_path.push("capacity");
-            (status_path, percentage_path)
-        })
+        .map(get_status_and_percentage_path)
         .collect();
 
     loop {

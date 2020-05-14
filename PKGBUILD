@@ -1,5 +1,5 @@
 pkgname=batt
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc='A simple battery monitor.'
 arch=('i686' 'x86_64')

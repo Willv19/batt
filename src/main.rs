@@ -6,41 +6,6 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-use nix;
-
-const USAGE_STRING: &'static str = "USAGE:
-    batt [OPTIONS]
-
-OPTIONS:
-    -d, --daemonize\tLaunch batt as a daemon
-    -h, --help\tShow this help message";
-
-struct Args {
-    pub daemonize: bool,
-}
-
-fn parse_args() -> Args {
-    let mut daemonize = false;
-
-    let mut args = std::env::args();
-    args.next();
-    for arg in args {
-        match arg.as_str() {
-            "-d" | "--daemonize" => daemonize = true,
-            "-h" | "--help" => {
-                println!("A simple battery monitor\n{}", USAGE_STRING);
-                std::process::exit(0);
-            }
-            _ => {
-                eprintln!("Error: unrecognized option '{}'\n\n{}", arg, USAGE_STRING);
-                std::process::exit(1);
-            }
-        };
-    }
-
-    Args { daemonize }
-}
-
 fn get_status_and_percentage_path(battery: &String) -> (PathBuf, PathBuf) {
     let path = PathBuf::from("/sys/class/power_supply/".to_owned() + battery);
 
@@ -54,18 +19,6 @@ fn get_status_and_percentage_path(battery: &String) -> (PathBuf, PathBuf) {
 }
 
 fn main() {
-    let Args { daemonize } = parse_args();
-
-    if daemonize {
-        match nix::unistd::daemon(true, true) {
-            Ok(_) => println!("Successfully daemonized!"),
-            Err(err) => {
-                eprintln!("Error in daemonizing: {}", err);
-                std::process::exit(1);
-            }
-        }
-    }
-
     let config = Config::default();
 
     let mut last_max_percentage = 101;

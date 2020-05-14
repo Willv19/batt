@@ -1,8 +1,5 @@
 [package]
 name = "batt"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Will Vauclain <willvauclain.dev@gmail.com>"]
 edition = "2018"
-
-[dependencies]
-nix = "0.15.0"
